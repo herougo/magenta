@@ -40,7 +40,7 @@ import tensorflow as tf
 
 import magenta
 from magenta.common import sequence_example_lib
-from magenta.models.rl_tuner import rl_tuner_ops
+import rl_tuner_ops
 from magenta.models.shared import events_rnn_graph
 from magenta.music import melodies_lib
 from magenta.music import midi_io
@@ -279,9 +279,10 @@ class NoteRNNLoader(object):
       tf.logging.warn("Can't find checkpoint file, using %s",
                       self.checkpoint_file)
       checkpoint_file = self.checkpoint_file
-    tf.logging.info('Checkpoint file: %s', checkpoint_file)
+    else:
+      tf.logging.info('Checkpoint file: %s', checkpoint_file)
 
-    saver.restore(self.session, checkpoint_file)
+      saver.restore(self.session, checkpoint_file)
 
   def load_primer(self):
     """Loads default MIDI primer file.

@@ -38,9 +38,9 @@ import numpy as np
 from scipy.misc import logsumexp
 import tensorflow as tf
 
-from magenta.models.rl_tuner import note_rnn_loader
-from magenta.models.rl_tuner import rl_tuner_eval_metrics
-from magenta.models.rl_tuner import rl_tuner_ops
+import note_rnn_loader
+import rl_tuner_eval_metrics
+import rl_tuner_ops
 from magenta.music import melodies_lib as mlib
 from magenta.music import midi_io
 
