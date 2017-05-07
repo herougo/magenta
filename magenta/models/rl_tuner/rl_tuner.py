@@ -1526,25 +1526,30 @@ class RLTuner(object):
       reward = -0.3
       tf.logging.debug('7th')
     if interval > rl_tuner_ops.OCTAVE:
-      reward = -1.0
+      reward = -2.0
       tf.logging.debug('More than octave.')
 
-    # common major intervals are good
-    if interval == rl_tuner_ops.IN_KEY_FIFTH:
-      reward = 0.1
-      tf.logging.debug('In key 5th')
-    if interval == rl_tuner_ops.IN_KEY_THIRD:
-      reward = 0.15
-      tf.logging.debug('In key 3rd')
+    # NEW ****
+    if interval == 6: # tritone
+      reward = -0.3
 
+    # common major intervals are good
+    #if interval == rl_tuner_ops.IN_KEY_FIFTH:
+    #  reward = 0.15
+    #  tf.logging.debug('In key 5th')
+    #if interval == rl_tuner_ops.IN_KEY_THIRD:
+    #  reward = 0.15
+    #  tf.logging.debug('In key 3rd')
+
+    # NEW ****
     # smaller steps are generally preferred
-    if interval == rl_tuner_ops.THIRD:
+    if interval <= rl_tuner_ops.SECOND:
+      reward = 0.15
+      tf.logging.debug('2nd')
+    elif interval <= rl_tuner_ops.THIRD:
       reward = 0.09
       tf.logging.debug('3rd')
-    if interval == rl_tuner_ops.SECOND:
-      reward = 0.08
-      tf.logging.debug('2nd')
-    if interval == rl_tuner_ops.FOURTH:
+    elif interval <= rl_tuner_ops.FOURTH:
       reward = 0.07
       tf.logging.debug('4th')
 
@@ -2075,11 +2080,11 @@ class RLTuner(object):
         self.note_distance += np.abs(action_note - self.my_prev_note)
 
 
-        note_distance_per_beat = min(self.note_distance / (self.beat + 1), 5.0)
+        note_distance_per_beat = self.note_distance / (self.beat + 1)
 
         if self.beat >= 3:
           if note_distance_per_beat >= 2:
-            reward -= min(note_distance_per_beat - 2, 5)
+            reward -= (note_distance_per_beat - 2)
           elif note_distance_per_beat <= 0.3:
             reward += note_distance_per_beat - 0.5
       self.my_prev_note = action_note
@@ -2091,7 +2096,7 @@ class RLTuner(object):
         or (chord_section == 1 and action_note in F_MAJOR_CHORD)
         or (chord_section == 2 and action_note in G_MAJOR_CHORD)
         or (chord_section == 3 and action_note in C_MAJOR_CHORD)):
-        reward += 0.05
+        reward += 0.03
 
     if DEBUG:
       print action_note, "reward:", reward
