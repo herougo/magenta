@@ -2072,8 +2072,8 @@ class RLTuner(object):
       if self.note_distance == -1:
         self.note_distance = 0.0
       else:
-        prev_note = np.argmax(self.composition[-1])
-        self.note_distance += np.abs(action_note - prev_note)
+        self.note_distance += np.abs(action_note - self.my_prev_note)
+
 
         note_distance_per_beat = min(self.note_distance / (self.beat + 1), 5.0)
 
@@ -2082,6 +2082,7 @@ class RLTuner(object):
             reward -= min(note_distance_per_beat - 2, 5)
           elif note_distance_per_beat <= 0.3:
             reward += note_distance_per_beat - 0.5
+      self.my_prev_note = action_note
 
 
       # reward using chords
