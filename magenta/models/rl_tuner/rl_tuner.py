@@ -60,7 +60,7 @@ def reload_files():
   reload(rl_tuner_ops)
   reload(rl_tuner_eval_metrics)
 
-DEBUG = True
+DEBUG = False
 
 
 class RLTuner(object):
@@ -411,6 +411,9 @@ class RLTuner(object):
     self.composition_direction = 0
     self.leapt_from = None
     self.steps_since_last_leap = 0
+    # NEW!!!!
+    self.note_distance = -1
+
 
   def build_graph(self):
     """Builds the reinforcement learning tensorflow graph."""
@@ -1063,6 +1066,8 @@ class RLTuner(object):
     if reward != prev_reward:
       tf.logging.debug('Reward high low unique: %s', reward)
 
+    reward += self.reward_other(action)
+
     return reward
 
   def random_reward_shift_to_mean(self, reward):
@@ -1173,7 +1178,7 @@ class RLTuner(object):
       reward = penalty_amount
 
     if DEBUG:
-      print "reward_key:", action, "gets reward", reward
+      print "reward_key:", action_note, "gets reward", reward
 
     return reward
 
@@ -1543,6 +1548,7 @@ class RLTuner(object):
       reward = 0.07
       tf.logging.debug('4th')
 
+    '''
     # larger leaps not as good, especially if not in key
     if interval == rl_tuner_ops.SIXTH:
       reward = 0.05
@@ -1550,6 +1556,7 @@ class RLTuner(object):
     if interval == rl_tuner_ops.FIFTH:
       reward = 0.02
       tf.logging.debug('5th')
+    '''
 
     tf.logging.debug('Interval reward', reward * scaler)
     return reward * scaler
@@ -2053,3 +2060,42 @@ class RLTuner(object):
       self.eval_avg_music_theory_reward = npz_file['eval_music_theory_rewards']
       self.eval_avg_note_rnn_reward = npz_file['eval_note_rnn_rewards']
       self.target_val_list = npz_file['target_val_list']
+  def reward_other(self, action):
+    reward = 0
+    # penalize too much note distance
+    # - assume distance per quarter note should be <= 8
+
+    action_note = np.argmax(action)
+
+    if action_note >= 2:
+      # if first_note
+      if self.note_distance == -1:
+        self.note_distance = 0.0
+      else:
+        prev_note = np.argmax(self.composition[-1])
+        self.note_distance += np.abs(action_note - prev_note)
+
+        note_distance_per_beat = min(self.note_distance / (self.beat + 1), 5.0)
+
+        if self.beat >= 3:
+          if note_distance_per_beat >= 2:
+            reward -= min(note_distance_per_beat - 2, 5)
+          elif note_distance_per_beat <= 0.3:
+            reward += note_distance_per_beat - 0.5
+
+
+      # reward using chords
+      chord_section = (self.beat / 8) % 4
+      if ((chord_section == 0 and action_note in C_MAJOR_CHORD)
+        or (chord_section == 1 and action_note in F_MAJOR_CHORD)
+        or (chord_section == 2 and action_note in G_MAJOR_CHORD)
+        or (chord_section == 3 and action_note in C_MAJOR_CHORD)):
+        reward += 0.05
+
+
+    return reward
+
+
+C_MAJOR_CHORD = [2, 6, 9, 14, 18, 21, 26]
+F_MAJOR_CHORD = [2, 7, 11, 14, 19, 23, 26]
+G_MAJOR_CHORD = [4, 9, 13, 16, 21, 25]
