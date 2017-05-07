@@ -60,6 +60,8 @@ def reload_files():
   reload(rl_tuner_ops)
   reload(rl_tuner_eval_metrics)
 
+DEBUG = True
+
 
 class RLTuner(object):
   """Implements a recurrent DQN designed to produce melody sequences."""
@@ -584,6 +586,8 @@ class RLTuner(object):
 
       # Used to keep track of the current musical composition and beat for
       # the reward functions.
+      if DEBUG:
+        print "train:", np.argmax(new_observation)
       self.composition.append(np.argmax(new_observation))
       self.beat += 1
 
@@ -869,6 +873,8 @@ class RLTuner(object):
         music_theory_rewards[t] = music_theory_reward * self.reward_scaler
         total_rewards[t] = total_reward
 
+        if DEBUG:
+          print "train:", np.argmax(new_observation)
         self.composition.append(np.argmax(new_observation))
         self.beat += 1
         last_observation = new_observation
@@ -1145,7 +1151,7 @@ class RLTuner(object):
 
     return reward
 
-  def reward_key(self, action, penalty_amount=-1.0, key=None):
+  def reward_key(self, action, penalty_amount=-10.0, key=None):
     """Applies a penalty for playing notes not in a specific key.
 
     Args:
@@ -1165,6 +1171,9 @@ class RLTuner(object):
     action_note = np.argmax(action)
     if action_note not in key:
       reward = penalty_amount
+
+    if DEBUG:
+      print "reward_key:", action, "gets reward", reward
 
     return reward
 
@@ -1851,7 +1860,7 @@ class RLTuner(object):
     self.saver.save(self.session, save_loc,
                     global_step=len(self.rewards_batched)*self.output_every_nth)
 
-    self.save_stored_rewards(name)
+    #self.save_stored_rewards(name)
 
   def save_stored_rewards(self, file_name):
     """Saves the models stored rewards over time in a .npz file.
