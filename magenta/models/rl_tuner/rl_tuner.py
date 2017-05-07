@@ -2092,6 +2092,8 @@ class RLTuner(object):
         or (chord_section == 3 and action_note in C_MAJOR_CHORD)):
         reward += 0.05
 
+    if DEBUG:
+      print action_note, "reward:", reward
 
     return reward
 
