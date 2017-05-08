@@ -1057,6 +1057,7 @@ class RLTuner(object):
       tf.logging.debug('Reward preferred_intervals: %s', reward)
     prev_reward = reward
 
+    '''
     reward += self.reward_leap_up_back(action)
     if reward != prev_reward:
       tf.logging.debug('Reward leap up back: %s', reward)
@@ -1065,6 +1066,7 @@ class RLTuner(object):
     reward += self.reward_high_low_unique(action)
     if reward != prev_reward:
       tf.logging.debug('Reward high low unique: %s', reward)
+    '''
 
     reward += self.reward_other(action)
 
@@ -1552,7 +1554,8 @@ class RLTuner(object):
     elif interval <= rl_tuner_ops.FOURTH:
       reward = 0.07
       tf.logging.debug('4th')
-
+    elif interval > rl_tuner_ops.FIFTH:
+      reward += -0.3
     '''
     # larger leaps not as good, especially if not in key
     if interval == rl_tuner_ops.SIXTH:
@@ -2066,7 +2069,7 @@ class RLTuner(object):
       self.eval_avg_note_rnn_reward = npz_file['eval_note_rnn_rewards']
       self.target_val_list = npz_file['target_val_list']
   def reward_other(self, action):
-    reward = 0
+    reward = 0.0
     # penalize too much note distance
     # - assume distance per quarter note should be <= 8
 
@@ -2076,6 +2079,8 @@ class RLTuner(object):
       # if first_note
       if self.note_distance == -1:
         self.note_distance = 0.0
+        self.my_min = 1000
+        self.my_max = 0
       else:
         self.note_distance += np.abs(action_note - self.my_prev_note)
 
@@ -2084,19 +2089,23 @@ class RLTuner(object):
 
         if self.beat >= 3:
           if note_distance_per_beat >= 2:
-            reward -= (note_distance_per_beat - 2)
-          elif note_distance_per_beat <= 0.3:
-            reward += note_distance_per_beat - 0.5
+            reward -= (note_distance_per_beat - 2) * 5
+          # elif note_distance_per_beat <= 0.3:
+          #  reward += note_distance_per_beat - 0.5
       self.my_prev_note = action_note
 
+      # penalize using a large range of notes
+      self.my_min = min(self.my_min, action_note)
+      self.my_max = max(self.my_max, action_note)
+      reward -= min(max(self.my_max - self.my_min - 16.0, 0.0), 1.0)
 
-      # reward using chords
+      '''# reward using chords
       chord_section = (self.beat / 8) % 4
       if ((chord_section == 0 and action_note in C_MAJOR_CHORD)
         or (chord_section == 1 and action_note in F_MAJOR_CHORD)
         or (chord_section == 2 and action_note in G_MAJOR_CHORD)
         or (chord_section == 3 and action_note in C_MAJOR_CHORD)):
-        reward += 0.03
+        reward += 0.03'''
 
     if DEBUG:
       print action_note, "reward:", reward
